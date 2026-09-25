@@ -63,4 +63,3 @@ Izah Sharif
 BS Information Technology
 Izah Sharif
 
-BS Information Technology
