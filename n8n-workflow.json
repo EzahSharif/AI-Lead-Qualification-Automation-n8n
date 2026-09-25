@@ -1,0 +1,519 @@
+{
+  "name": "AI Lead Intelligence & Sales Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-560, 0],
+      "id": "1534d8a9-40e2-4ab9-a4e4-79e534bdcf66",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [-304, 224],
+      "id": "bd51b6ed-9407-4b46-bf25-e2f11ce83b30",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "24e2e0a0-15aa-402e-bf9c-7f62fbe7c914",
+              "leftValue": "={{ $json.lead_score }}",
+              "rightValue": 80,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [128, 16],
+      "id": "a65d7fa2-36a4-4ef3-9e4e-adc485ed1a98",
+      "name": "HOT"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "872d89a3-5481-45d3-959b-c28e411197ab",
+              "leftValue": "={{ $json.lead_score }}",
+              "rightValue": 50,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [352, 112],
+      "id": "ffc43b2f-024b-428a-9278-b7e773e91c34",
+      "name": "WARM"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI Lead Analyzer for a business.\n\nAnalyze the lead information provided below.\n\nIMPORTANT:\n\nTreat the Lead Information below as the complete source of truth.\nIf Name, Company, or Website contains a value, treat that information as PROVIDED and DO NOT say it is missing.\nOnly say that Name, Company, or Website is missing if its actual value is empty, blank, null, or not provided.\nDo not assume a field is missing just because the value is short, generic, or uses a common email provider.\nDo not invent facts.\nDo not make unsupported assumptions.\nBase your analysis ONLY on the provided lead information.\n\nEvaluate the lead based on:\n\nLead Qualification\nLead Score\nCustomer Intent\nBusiness Need\nRecommended Action\nReason\n\nReturn ONLY valid JSON in exactly this format:\n\n{\n\"lead_qualification\": \"\",\n\"lead_score\": 0,\n\"customer_intent\": \"\",\n\"business_need\": \"\",\n\"recommended_action\": \"\",\n\"reason\": \"\"\n}\n\nLead Score must be a number from 0 to 100.\n\nLead Information:\n\nName: {{ $json.name }}\nEmail: {{$json.Email}}\nCompany: {{ $json['Company Name'] }}\nWebsite: {{ $json['Company Website'] }}\nBusiness Description: {{$json[\"Business Description\"]}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-240, 16],
+      "id": "a4842d87-8b84-477f-8864-7e7437ed9fb9",
+      "name": "AI Lead Analyzer"
+    },
+    {
+      "parameters": {
+        "fromEmail": "YOUR_SENDER_EMAIL@example.com",
+        "toEmail": "YOUR_SALES_EMAIL@example.com",
+        "subject": "🔥 Hot Lead Alert - Immediate Follow-Up Required",
+        "emailFormat": "text",
+        "text": "=Hi Sales Team,\n\nA new HOT lead has been identified and requires follow-up.\n\nLead Name: {{ $('Prepare Lead Data').item.json.name }}\nLead Email: {{ $('Prepare Lead Data').item.json.Email }}\nCompany: {{ $('Prepare Lead Data').item.json[\"Company Name\"] }}\nWebsite: {{ $('Prepare Lead Data').item.json[\"Company Website\"] }}\nBusiness Description: {{ $('Prepare Lead Data').item.json[\"Business Description\"] }}\nLead Qualification: {{ $json.lead_qualification }}\nLead Score: {{ $json.lead_score }}/100\nCustomer Intent: {{ $json.customer_intent }}\nBusiness Need: {{ $json.business_need }}\n\nRecommended Action: {{ $json.recommended_action }}\n\nReason:\n{{ $json.reason }}\n\nPlease review the lead and follow up accordingly.\n\nBest regards,\nAI Lead Automation System",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [352, -80],
+      "id": "b3aa2739-eed0-4016-b64d-9a47974b5a5e",
+      "name": "HOT Email"
+    },
+    {
+      "parameters": {
+        "fromEmail": "YOUR_SENDER_EMAIL@example.com",
+        "toEmail": "YOUR_CUSTOMER_EMAIL@example.com",
+        "subject": "Follow-Up on Your Business Inquiry",
+        "emailFormat": "text",
+        "text": "=Hi {{ $('Prepare Lead Data').item.json.name }},\n\nThank you for your interest.\n\nWe’d like to learn more about your business and understand your requirements so we can recommend the right solution.\n\nLead Details:\n\nCompany: {{ $('Prepare Lead Data').item.json[\"Company Name\"] }}\nWebsite: {{ $('Prepare Lead Data').item.json[\"Company Website\"] }}\nBusiness Description: {{ $('Prepare Lead Data').item.json[\"Business Description\"] }}\n\nLead Qualification: {{ $json.lead_qualification }}\nLead Score: {{ $json.lead_score }}/100\nCustomer Intent: {{ $json.customer_intent }}\nBusiness Need: {{ $json.business_need }}\n\nRecommended Action:\n{{ $json.recommended_action }}\n\nPlease reply with any additional details about your requirements, and our team will be happy to assist you.\n\nBest regards,\nBusiness Support Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [576, 32],
+      "id": "cdcc4fdc-2c92-4441-9a59-fecd92941d2e",
+      "name": "WARM Email"
+    },
+    {
+      "parameters": {
+        "fromEmail": "YOUR_SENDER_EMAIL@example.com",
+        "toEmail": "YOUR_CUSTOMER_EMAIL@example.com",
+        "subject": "We’d Love to Learn More About Your Business",
+        "emailFormat": "text",
+        "text": "=Hi {{ $('Prepare Lead Data').item.json.name }},\n\nThank you for reaching out to us.\n\nWe’d be happy to learn more about your business and understand how we can help you.\n\nLead Details:\n\nCompany: {{ $('Prepare Lead Data').item.json[\"Company Name\"] }}\nWebsite: {{ $('Prepare Lead Data').item.json[\"Company Website\"] }}\nBusiness Description: {{ $('Prepare Lead Data').item.json[\"Business Description\"] }}\n\nLead Qualification: {{ $json.lead_qualification }}\nLead Score: {{ $json.lead_score }}/100\nCustomer Intent: {{ $json.customer_intent }}\nBusiness Need: {{ $json.business_need }}\n\nRecommended Action:\n{{ $json.recommended_action }}\n\nReason:\n{{ $json.reason }}\n\nIf you’re interested, please reply with more details about your business requirements. Our team will be happy to assist you.\n\nBest regards,\nBusiness Support Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [576, 208],
+      "id": "eef14fbb-5018-4581-993f-6d1bfb078b81",
+      "name": "LOW Email"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7394c2f6-d2af-4c0c-8103-21995067d130",
+              "name": "customer_intent",
+              "value": "={{ JSON.parse($json.output).customer_intent }}",
+              "type": "string"
+            },
+            {
+              "id": "53e5c213-b790-4c19-af4e-6a7274c471ba",
+              "name": "business_need",
+              "value": "={{ JSON.parse($json.output).business_need }}",
+              "type": "string"
+            },
+            {
+              "id": "56418aa3-ad84-4d19-93df-4811ee3e36aa",
+              "name": "recommended_action",
+              "value": "={{ JSON.parse($json.output).recommended_action }}",
+              "type": "string"
+            },
+            {
+              "id": "8392be56-9744-446a-8998-d13cf7d1f85c",
+              "name": "reason",
+              "value": "={{ JSON.parse($json.output).reason }}",
+              "type": "string"
+            },
+            {
+              "id": "867dd2f9-d4d6-4527-9841-2ffd11858f64",
+              "name": "lead_score",
+              "value": "={{ JSON.parse($json.output).lead_score }}",
+              "type": "string"
+            },
+            {
+              "id": "c5e54ef9-b069-47e6-ab9a-808fc4e03bf3",
+              "name": "lead_qualification",
+              "value": "={{ JSON.parse($json.output).lead_qualification }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [288, 240],
+      "id": "a10840e4-2c59-4b1c-ab66-5d8c7eef9dda",
+      "name": "Prepare AI Lead Data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fa4c64d0-2da8-4b62-af28-676a4469725a",
+              "name": "name",
+              "value": "={{ $json.body.data.fields[0].value }}",
+              "type": "string"
+            },
+            {
+              "id": "c8c08091-b40d-4a6f-bc70-dbd8cb2b9c56",
+              "name": "Email",
+              "value": "={{ $json.body.data.fields[1].value }}",
+              "type": "string"
+            },
+            {
+              "id": "3556f292-d6b4-4134-af10-c6cce3087740",
+              "name": "Company Name",
+              "value": "={{ $json.body.data.fields[2].value }}",
+              "type": "string"
+            },
+            {
+              "id": "ef294bb5-faa2-4f6e-9b01-7e9af3a3cf72",
+              "name": "Company Website",
+              "value": "={{ $json.body.data.fields[3].value }}",
+              "type": "string"
+            },
+            {
+              "id": "a5933f29-f437-48bb-9579-623088159f4e",
+              "name": "Business Description",
+              "value": "={{ $json.body.data.fields[4].value }}",
+              "type": "string"
+            },
+            {
+              "id": "8f17aebe-384a-47f3-bd84-be2b9846867c",
+              "name": "Start Time",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [-384, 16],
+      "id": "b781f839-5e2d-4481-9a1b-aee39d72713a",
+      "name": "Prepare Lead Data"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Prepare Lead Data').item.json.name }}",
+            "Email": "={{ $('Prepare Lead Data').item.json.Email }}",
+            "Company": "={{ $('Prepare Lead Data').item.json[\"Company Name\"] }}",
+            "Website": "={{ $('Prepare Lead Data').item.json[\"Company Website\"] }}",
+            "Business Description": "={{ $('Prepare Lead Data').item.json[\"Business Description\"] }}",
+            "Lead Qualification": "={{ $('Prepare AI Lead Data').item.json.lead_qualification }}",
+            "Lead Score": "={{ $('Prepare AI Lead Data').item.json.lead_score }}",
+            "Customer Intent": "={{ $('Prepare AI Lead Data').item.json.customer_intent }}",
+            "Business Need": "={{ $('Prepare AI Lead Data').item.json.business_need }}",
+            "Recommended Action": "={{ $('Prepare AI Lead Data').item.json.recommended_action }}",
+            "Reason": "={{ $('Prepare AI Lead Data').item.json.reason }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Business Description",
+              "displayName": "Business Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Qualification",
+              "displayName": "Lead Qualification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Intent",
+              "displayName": "Customer Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Business Need",
+              "displayName": "Business Need",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Recommended Action",
+              "displayName": "Recommended Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [1024, 16],
+      "id": "ccf9a226-f9f7-4616-a417-cf4be7040e0f",
+      "name": "Save Lead to Google Sheets"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Lead Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HOT": {
+      "main": [
+        [
+          {
+            "node": "HOT Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WARM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WARM": {
+      "main": [
+        [
+          {
+            "node": "WARM Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LOW Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Lead Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HOT Email": {
+      "main": [
+        [
+          {
+            "node": "Save Lead to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WARM Email": {
+      "main": [
+        [
+          {
+            "node": "Save Lead to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LOW Email": {
+      "main": [
+        [
+          {
+            "node": "Save Lead to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Lead Data": {
+      "main": [
+        [
+          {
+            "node": "HOT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Lead Data": {
+      "main": [
+        [
+          {
+            "node": "AI Lead Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
